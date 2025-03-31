@@ -75,6 +75,7 @@
 		47A90D5C2D171D5A00DB5262 /* UpdateSettingsV2View.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A90D5B2D171D5600DB5262 /* UpdateSettingsV2View.swift */; };
 		47A90D5E2D17254D00DB5262 /* Updater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A90D5D2D17254B00DB5262 /* Updater.swift */; };
 		47A90D602D1728F600DB5262 /* LicenseSettingsV2View.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A90D5F2D1728F100DB5262 /* LicenseSettingsV2View.swift */; };
+		47AFA2AD2D7600F3009BD0B3 /* IconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AFA2AC2D7600C9009BD0B3 /* IconView.swift */; };
 		47C2A2372D167B8C005EB5FE /* WindowConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C2A2362D167B86005EB5FE /* WindowConfigurator.swift */; };
 		47C2A2392D167E19005EB5FE /* GeneralSettingsV2View.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C2A2382D167E15005EB5FE /* GeneralSettingsV2View.swift */; };
 		47C2A23B2D1681DE005EB5FE /* AdvancedSettingsV2View.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C2A23A2D1681D9005EB5FE /* AdvancedSettingsV2View.swift */; };
@@ -176,6 +177,7 @@
 		47A90D5B2D171D5600DB5262 /* UpdateSettingsV2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsV2View.swift; sourceTree = "<group>"; };
 		47A90D5D2D17254B00DB5262 /* Updater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Updater.swift; sourceTree = "<group>"; };
 		47A90D5F2D1728F100DB5262 /* LicenseSettingsV2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicenseSettingsV2View.swift; sourceTree = "<group>"; };
+		47AFA2AC2D7600C9009BD0B3 /* IconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconView.swift; sourceTree = "<group>"; };
 		47C2A2362D167B86005EB5FE /* WindowConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowConfigurator.swift; sourceTree = "<group>"; };
 		47C2A2382D167E15005EB5FE /* GeneralSettingsV2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsV2View.swift; sourceTree = "<group>"; };
 		47C2A23A2D1681D9005EB5FE /* AdvancedSettingsV2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsV2View.swift; sourceTree = "<group>"; };
@@ -283,6 +285,7 @@
 				47A2BADD2D166E2F00BECD54 /* SettingsV2View.swift */,
 				47A90D5B2D171D5600DB5262 /* UpdateSettingsV2View.swift */,
 				47C2A2362D167B86005EB5FE /* WindowConfigurator.swift */,
+				47AFA2AC2D7600C9009BD0B3 /* IconView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -509,6 +512,7 @@
 				472F94C92C8854850092B4FF /* DropZoneView.swift in Sources */,
 				473FEC302D63893400DFB757 /* SingleGifPreviewView.swift in Sources */,
 				475A52CA2D1699AD00A18CF4 /* AppearanceSettingsV2View.swift in Sources */,
+				47AFA2AD2D7600F3009BD0B3 /* IconView.swift in Sources */,
 				47DB9E272D2826FA00C11FA6 /* VideoOptionsView.swift in Sources */,
 				4771A42B2B4D9B9600768E81 /* Utils.swift in Sources */,
 				470F21142C3989530068A297 /* TIFFProcessor.swift in Sources */,
@@ -677,7 +681,7 @@
 				CODE_SIGN_ENTITLEMENTS = CompressX/CompressX.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 160;
+				CURRENT_PROJECT_VERSION = 171;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CompressX/Preview Content\"";
 				DEVELOPMENT_TEAM = BH46VD9229;
@@ -693,7 +697,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.19;
+				MARKETING_VERSION = 1.20;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hieudinh.CompressX;
 				PRODUCT_NAME = Compresto;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -709,7 +713,7 @@
 				CODE_SIGN_ENTITLEMENTS = CompressX/CompressX.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 160;
+				CURRENT_PROJECT_VERSION = 171;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CompressX/Preview Content\"";
 				DEVELOPMENT_TEAM = BH46VD9229;
@@ -725,7 +729,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.19;
+				MARKETING_VERSION = 1.20;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hieudinh.CompressX;
 				PRODUCT_NAME = Compresto;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -777,8 +781,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swhitty/SwiftDraw";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.18.1;
+				kind = exactVersion;
+				version = 0.18.2;
 			};
 		};
 		4746E1C02B19D7B300C862F4 /* XCRemoteSwiftPackageReference "SwiftDate" */ = {

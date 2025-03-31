@@ -24,10 +24,12 @@ enum VideoQuality: Codable, Equatable, RawRepresentable, Hashable {
       self = .medium
     case "acceptable":
       self = .acceptable
-    case "ultraHD":
+    case "ultra hd":
       self = .ultraHD
-    case "fullHD":
+    case "full hd":
       self = .fullHD
+    case "file size":
+      self = .fileSize
     default:
       return nil
     }
@@ -44,6 +46,7 @@ enum VideoQuality: Codable, Equatable, RawRepresentable, Hashable {
   case acceptable
   case ultraHD
   case fullHD
+  case fileSize
   case custom(Int)
 
   static func ==(lhs: VideoQuality, rhs: VideoQuality) -> Bool {
@@ -66,6 +69,8 @@ enum VideoQuality: Codable, Equatable, RawRepresentable, Hashable {
       return "Ultra HD"
     case .fullHD:
       return "Full HD"
+    case .fileSize:
+      return "File size"
     case .custom(let value):
       return "Custom (\(value))"
     }
@@ -85,6 +90,8 @@ enum VideoQuality: Codable, Equatable, RawRepresentable, Hashable {
       return "30"
     case .custom(let value):
       return "\(value)"
+    case .fileSize:
+      return "17"
     default:
       return "17"
     }

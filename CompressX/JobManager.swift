@@ -74,6 +74,7 @@ class Job: Identifiable {
     outputType: OutputType,
     outputFolder: OutputFolder,
     customOutputFolder: String,
+    nestedFolderName: String,
     outputFileNameFormat: String,
     removeInputFile: Bool
   ) {
@@ -83,10 +84,39 @@ class Job: Identifiable {
     self.removeInputFile = removeInputFile
     self.inputFileCreationDate = try? getFileCreationDate(from: inputFileURL)
     let outputFolderURL: URL = {
-      if outputFolder == .custom, !customOutputFolder.isEmpty {
-        return URL(string: "file://" + customOutputFolder)!
-      } else {
+      switch outputFolder {
+      case .same:
         return inputFileURL.deletingLastPathComponent()
+      case .nested:
+        var path = inputFileURL.deletingLastPathComponent()
+        if nestedFolderName.isEmpty {
+          path.appendPathComponent("compressed")
+        } else {
+          path.appendPathComponent(nestedFolderName)
+        }
+        if FileManager.default.fileExists(atPath: path.path(percentEncoded: false)) == false {
+          try? FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
+        }
+        return path
+      case .custom:
+        if !customOutputFolder.isEmpty {
+          return URL(string: "file://" + customOutputFolder)!
+        }
+        return inputFileURL.deletingLastPathComponent()
+      }
+    }()
+    let qualityText: String = {
+      switch outputType {
+      case .video(let videoQuality, _, _, _, _, _, _, _, _):
+        return videoQuality.displayText
+      case .image(let imageQuality, _, _, _):
+        return imageQuality.displayText
+      case .gif(let gifQuality, _, _):
+        return gifQuality.displayText
+      case .gifCompress(let gifQuality, _):
+        return gifQuality.displayText
+      case .pdfCompress(let pdfQuality):
+        return pdfQuality.displayText
       }
     }()
     let intputFileNameWithoutExtension = inputFileURL.deletingPathExtension().lastPathComponent
@@ -95,9 +125,10 @@ class Job: Identifiable {
       .replacingOccurrences(of: "{datetime}", with: Date().toISO8601DateTime)
       .replacingOccurrences(of: "{date}", with: Date().toISO8601Date)
       .replacingOccurrences(of: "{time}", with: Date().toISO8601Time)
+      .replacingOccurrences(of: "{quality}", with: qualityText)
 
     switch outputType {
-    case .video(_, _, let videoFormat, _, _, _, _, _):
+    case .video(_, _, let videoFormat, _, _, _, _, _, _):
       if videoFormat != .same {
         outputFileURL = outputFolderURL.appendingPathComponent(intputFileNameWithoutExtension + format + "." + videoFormat.rawValue)
       } else {
@@ -185,6 +216,18 @@ class Job: Identifiable {
     return inputFileURL.pathExtension.lowercased() == "mkv" 
   }
 
+  var isFLV: Bool {
+    return inputFileURL.pathExtension.lowercased() == "flv"
+  }
+
+  var isAVI: Bool {
+    return inputFileURL.pathExtension.lowercased() == "avi"
+  }
+
+  var isProgressNotAvailable: Bool {
+    return isMKV || isFLV || isAVI
+  }
+
   var isWebP: Bool {
     return inputFileURL.pathExtension.lowercased() == "webp"
   }
@@ -195,6 +238,7 @@ enum OutputType {
     videoQuality: VideoQuality,
     videoDimension: VideoDimension,
     videoFormat: VideoFormat,
+    targetFileSize: Double,
     hasAudio: Bool,
     removeAudio: Bool,
     preserveTransparency: Bool,
@@ -208,7 +252,7 @@ enum OutputType {
 
   var startTime: Double? {
     switch self {
-    case .video(_, _, _, _, _, _, let startTime, _):
+    case .video(_, _, _, _, _, _, _, let startTime, _):
       return startTime?.seconds
     default: return nil
     }
@@ -216,7 +260,7 @@ enum OutputType {
 
   var endTime: Double? {
     switch self {
-    case .video(_, _, _, _, _, _, _, let endTime):
+    case .video(_, _, _, _, _, _, _, _, let endTime):
       return endTime?.seconds
     default: return nil
     }
@@ -249,6 +293,7 @@ class JobManager: ObservableObject {
   @AppStorage("confettiEnabled") var confettiEnabled = false
   @AppStorage("notifyWhenFinish") var notifyWhenFinish = false
   @AppStorage("imageSizeValue") var imageSizeValue = 100
+  @AppStorage("nestedFolderName") var nestedFolderName = "compressed"
 
   @Published var isRunning = false
   @Published var inputFileURLs: [URL] = []
@@ -273,7 +318,7 @@ class JobManager: ObservableObject {
     var arguments: [String] = []
     var error: String?
     switch job.outputType {
-    case .video(let videoQuality, let videoDimension, let videoFormat, let hasAudio, let removeAudio, _, let startTime, let endTime):
+    case .video(let videoQuality, let videoDimension, let videoFormat, let targetFileSize, let hasAudio, let removeAudio, _, let startTime, let endTime):
       if hardwareAccelerationEnabled {
         arguments.append(contentsOf: [
           "-hwaccel",
@@ -327,17 +372,28 @@ class JobManager: ObservableObject {
         }
       }
       let shouldUseWebMFormat: Bool = job.inputFileURL.pathExtension.uppercased() == VideoFormat.webm.rawValue.uppercased() || videoFormat == .webm
+      let duration: TimeInterval = (try? await getVideoDuration(from: job.inputFileURL)) ?? 0
+      let audioSize = try? await getAudioSizeFrom(url: job.inputFileURL)
+      let fileSize = job.inputFileURL.fileSize
+      let videoQualityParameters = getVideoQualityParameters(
+        videoQuality: videoQuality,
+        targetFileSize: targetFileSize,
+        videoDuration: duration,
+        audioSize: audioSize,
+        fileSize: fileSize
+      )
       if shouldUseWebMFormat {
-        arguments.append(contentsOf: [
-          "-c:v",
-          "libvpx-vp9",
-          "-b:v",
-          "0",
-          "-crf",
-          videoQuality.crf,
-          "-c:a",
-          "copy"
-        ])
+        arguments.append(contentsOf: ["-c:v", "libvpx-vp9", "-b:v", "0"] + videoQualityParameters + ["-c:a", "libopus" ])
+        if removeAudio && hasAudio {
+          arguments.append(contentsOf: [
+            "-an"
+          ])
+        } else {
+          arguments.append(contentsOf: [
+            "-c:a",
+            "libopus"
+          ])
+        }
       } else {
         if targetVideoFPS != .same, let inputFPS = try? await getFPS(from: job.inputFileURL), targetVideoFPS.value < inputFPS {
           arguments.append(contentsOf: [
@@ -347,15 +403,14 @@ class JobManager: ObservableObject {
         }
         arguments.append(contentsOf: [
           "-c:v",
-          encodingCodec.rawValue,
-          "-crf",
-          videoQuality.crf
+          encodingCodec.rawValue
         ])
-        if removeAudio || !hasAudio {
+        arguments.append(contentsOf: videoQualityParameters)
+        if (removeAudio || !hasAudio) && !job.isFLV && !job.isAVI {
           arguments.append("-an")
         } else if startTime != nil && endTime != nil {
 
-        } else {
+        } else if !job.isFLV && !job.isAVI {
           arguments.append(contentsOf: [
             "-c:a",
             "copy",
@@ -380,6 +435,7 @@ class JobManager: ObservableObject {
       }
       arguments.append(job.outputFileURL.path(percentEncoded: false))
       task.launchPath = ffmpegPath
+//      print("💛", arguments.joined(separator: " "))
       if !isValidFFmpegPath(ffmpegPath) {
         error = "FFmpeg setting is not correct"
       }
@@ -519,7 +575,7 @@ class JobManager: ObservableObject {
   }
 
   func compress(job: Job, isRetrying: Bool = false) async -> String? {
-    if case .video(let videoQuality, _, let videoFormat, _, _, let preserveTransparency, let startTime, let endTime) = job.outputType, preserveTransparency && videoFormat != .webm {
+    if case .video(let videoQuality, _, let videoFormat, _, _, _, let preserveTransparency, let startTime, let endTime) = job.outputType, preserveTransparency && videoFormat != .webm {
       return await transcodeVideo(sourceFileURL: job.inputFileURL, outputFileURL: job.outputFileURL, videoQuality: videoQuality, startTime: startTime, endTime: endTime)
     }
     guard isFileSupported(url: job.inputFileURL) else {
@@ -548,14 +604,14 @@ class JobManager: ObservableObject {
     }
     let (process, pathError) = await createTask(job: job)
     currentProcess = process
-    if !job.isMKV {
-      // TODO: if input file is MKV, then process doesn't emit any output 
+    if !job.isProgressNotAvailable {
+      // TODO: if input file is MKV, then process doesn't emit any output
       catchProgress(job: job, process: process)
     }
     if isRetrying {
       job.status = "Retrying"
     } else {
-      if job.isMKV {
+      if job.isProgressNotAvailable {
         job.status = "Compressing"
       } else if job.isVideo {
         job.status = "Preparing"
@@ -566,17 +622,20 @@ class JobManager: ObservableObject {
       }
     }
     let error = await CommandlineHelper.run(process: process)
+    job.status = "Finished"
     currentProcess = nil
     if error == nil {
       switch job.outputType {
-      case .video(let videoQuality, let videoDimension, let videoFormat, let hasAudio, let removeAudio, let preserveTransparency, let startTime, let endTime):
+      case .video(let videoQuality, let videoDimension, let videoFormat, let targetFileSize, let hasAudio, let removeAudio, let preserveTransparency, let startTime, let endTime):
         if FileManager.default.fileExists(atPath: job.outputFileURL.path(percentEncoded: false)),
            (job.outputFileSize ?? 0) >= (job.inputFileSize ?? 0),
+           videoQuality != .fileSize,
            let nextQuality = videoQuality.next {
           let newOutputType = OutputType.video(
             videoQuality: nextQuality,
             videoDimension: videoDimension,
             videoFormat: videoFormat,
+            targetFileSize: targetFileSize,
             hasAudio: hasAudio,
             removeAudio: removeAudio,
             preserveTransparency: preserveTransparency,
@@ -874,6 +933,7 @@ class JobManager: ObservableObject {
     gifQuality: VideoQuality,
     gifDimension: GifDimension,
     videoFormat: VideoFormat,
+    targetFileSize: Double,
     pdfQuality: PDFQuality,
     hasAudio: Bool,
     removeAudio: Bool,
@@ -916,6 +976,7 @@ class JobManager: ObservableObject {
               videoQuality: videoQuality,
               videoDimension: videoDimension,
               videoFormat: videoFormat,
+              targetFileSize: targetFileSize,
               hasAudio: hasAudio,
               removeAudio: removeAudio,
               preserveTransparency: preserveTransparency,
@@ -939,6 +1000,7 @@ class JobManager: ObservableObject {
         outputType: outputType,
         outputFolder: outputFolder,
         customOutputFolder: customOutputFolder,
+        nestedFolderName: nestedFolderName,
         outputFileNameFormat: outputFileNameFormat,
         removeInputFile: removeInputFile
       )

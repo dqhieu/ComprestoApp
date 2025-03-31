@@ -23,12 +23,13 @@ struct VideoOptionsView: View {
   @Binding var isInputWebM: Bool
   @Binding var fpsValue: Double
   @Binding var hasAudio: Bool
+  @Binding var targetFileSize: Double
 
   var videoQualities: [VideoQuality] {
     if showPreserveTransparency && shouldPreserveTransparency && outputFormat != .webm {
       return [.highest, .ultraHD, .fullHD]
     }
-    return [.highest, .high, .good, .medium, .acceptable]
+    return [.highest, .high, .good, .medium, .acceptable, .fileSize]
   }
 
   var gifQualities: [VideoQuality] = [.highest, .high, .good, .medium, .acceptable]
@@ -36,14 +37,39 @@ struct VideoOptionsView: View {
   var body: some View {
     Section {
       if outputFormat != .gif {
-        Picker(selection: $videoQuality) {
-          ForEach(videoQualities, id: \.self) { quality in
-            Text(quality.displayText).tag(quality.rawValue)
+        VStack(alignment: .leading) {
+          Picker(selection: $videoQuality) {
+            ForEach(videoQualities, id: \.self) { quality in
+              Text(quality.displayText).tag(quality.rawValue)
+            }
+          } label: {
+            Text("Video quality")
           }
-        } label: {
-          Text("Video quality")
+          .pickerStyle(.menu)
+          if videoQuality == .fileSize {
+            HStack {
+              Text("Target")
+                .font(.caption)
+                .padding(.trailing, 4)
+//              Slider(value: $targetFileSize, in: fileSizeRange, step: fileSizeRange.upperBound / 20)
+//                .labelsHidden()
+              Slider(
+                value: Binding(
+                  get: { targetFileSize },
+                  set: { newValue in
+                    let base: Int = Int(newValue.rounded())
+                    let modulo: Int = base % 10
+                    targetFileSize = Double(base - modulo)
+                  }
+                ),
+                in: fileSizeRange
+              )
+              .labelsHidden()
+              Text("\(fileSizeString(from: Int64(targetFileSize)))")
+                .frame(width: 60, alignment: .trailing)
+            }
+          }
         }
-        .pickerStyle(.menu)
         Picker(selection: $videoDimension) {
           ForEach(VideoDimension.allCases, id: \.self) { dimension in
             Text(dimension.displayText).tag(dimension.rawValue)
@@ -111,6 +137,21 @@ struct VideoOptionsView: View {
       }
     }
     .disabled(jobManager.isRunning)
+    .task {
+      targetFileSize = fileSizeRange.upperBound
+    }
+    .onChange(of: jobManager.inputFileURLs, perform: { newValue in
+      targetFileSize = fileSizeRange.upperBound
+    })
+  }
+
+  private var fileSizeRange: ClosedRange<Double> {
+    let allFileSizesInByte = jobManager.inputFileURLs.map { $0.fileSize }.compactMap { $0 }
+    let maxSize = Double(allFileSizesInByte.max() ?? 0)
+    if maxSize > 1024 {
+      return 1024...maxSize
+    }
+    return 0...1
   }
 
   private func resetOptionForTransparencyIfNeeded() {

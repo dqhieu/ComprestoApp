@@ -68,6 +68,7 @@ class Watcher {
                 videoQuality: updatedSetting.videoQuality,
                 videoDimension: updatedSetting.videoDimension ?? .same,
                 videoFormat: updatedSetting.videoFormat,
+                targetFileSize: 0,
                 hasAudio: true,
                 removeAudio: updatedSetting.removeAudio,
                 preserveTransparency: false,
@@ -91,6 +92,7 @@ class Watcher {
             outputType: outputType,
             outputFolder: updatedSetting.outputFolder,
             customOutputFolder: updatedSetting.customOutputFolder,
+            nestedFolderName: updatedSetting.nestedFolderName ?? "",
             outputFileNameFormat: outputFormat,
             removeInputFile: updatedSetting.removeFileAfterCompression ?? false
           )
@@ -128,6 +130,9 @@ class Watcher {
   }
 
   func addJobs(_ jobs: [Job]) {
+    guard LicenseManager.shared.isValid else {
+      return showActiveLicenseNotification()
+    }
     jobQueue.append(contentsOf: jobs)
     jobQueuePublisher.send(jobQueue)
   }

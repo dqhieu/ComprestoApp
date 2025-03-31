@@ -89,83 +89,49 @@ struct AppearanceSettingsV2View: View {
         LazyVGrid(columns: [
           GridItem(.flexible()),
           GridItem(.flexible())
-        ], alignment: .leading
-        ) {
-          if let iconImage = NSImage(named: "AppIcon") {
-            HStack {
-              Image(nsImage: iconImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64, alignment: .center)
-                .onTapGesture {
-                  changeIcon(iconImage: iconImage, iconName: "AppIcon")
-                }
-              Text("Original")
-              Spacer()
+        ], alignment: .leading) {
+          IconView(iconName: "AppIcon",
+                   displayName: "Original",
+                   twitterHandle: nil,
+                   selectedIconName: selectedAppIconName) {
+            if let iconImage = NSImage(named: "AppIcon") {
+              changeIcon(iconImage: iconImage, iconName: "AppIcon")
             }
           }
-          if let iconImage = NSImage(named: "CompressXBlue") {
-            HStack {
-              Image(nsImage: iconImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64, alignment: .center)
-                .onTapGesture {
-                  changeIcon(iconImage: iconImage, iconName: "CompressXBlue")
-                }
-              Text("Blue")
-              Spacer()
+
+          IconView(iconName: "CompressXBlue",
+                   displayName: "Blue",
+                   twitterHandle: nil,
+                   selectedIconName: selectedAppIconName) {
+            if let iconImage = NSImage(named: "CompressXBlue") {
+              changeIcon(iconImage: iconImage, iconName: "CompressXBlue")
             }
           }
-          if let iconImage = NSImage(named: "CompressX-alohe-light") {
-            HStack {
-              Image(nsImage: iconImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64, alignment: .center)
-                .onTapGesture {
-                  changeIcon(iconImage: iconImage, iconName: "CompressX-alohe-light")
-                }
-              VStack(alignment: .leading) {
-                Text("Alohe Light")
-                Link(destination: URL(string: "https://twitter.com/alemalohe")!) {
-                  Text("@alemalohe")
-                }
-              }
+
+          IconView(iconName: "CompressX-alohe-light",
+                   displayName: "Alohe Light",
+                   twitterHandle: "alemalohe",
+                   selectedIconName: selectedAppIconName) {
+            if let iconImage = NSImage(named: "CompressX-alohe-light") {
+              changeIcon(iconImage: iconImage, iconName: "CompressX-alohe-light")
             }
           }
-          if let iconImage = NSImage(named: "CompressX-alohe-dark") {
-            HStack {
-              Image(nsImage: iconImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64, alignment: .center)
-                .onTapGesture {
-                  changeIcon(iconImage: iconImage, iconName: "CompressX-alohe-dark")
-                }
-              VStack(alignment: .leading) {
-                Text("Alohe Dark")
-                Link(destination: URL(string: "https://twitter.com/alemalohe")!) {
-                  Text("@alemalohe")
-                }
-              }
+
+          IconView(iconName: "CompressX-alohe-dark",
+                   displayName: "Alohe Dark",
+                   twitterHandle: "alemalohe",
+                   selectedIconName: selectedAppIconName) {
+            if let iconImage = NSImage(named: "CompressX-alohe-dark") {
+              changeIcon(iconImage: iconImage, iconName: "CompressX-alohe-dark")
             }
           }
-          if let iconImage = NSImage(named: "CompressX-Kacper") {
-            HStack {
-              Image(nsImage: iconImage)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64, alignment: .center)
-                .onTapGesture {
-                  changeIcon(iconImage: iconImage, iconName: "CompressX-Kacper")
-                }
-              VStack(alignment: .leading) {
-                Text("Kacper")
-                Link(destination: URL(string: "https://twitter.com/kacperfyi")!) {
-                  Text("@kacperfyi")
-                }
-              }
+
+          IconView(iconName: "CompressX-Kacper",
+                   displayName: "Kacper",
+                   twitterHandle: "kacperfyi",
+                   selectedIconName: selectedAppIconName) {
+            if let iconImage = NSImage(named: "CompressX-Kacper") {
+              changeIcon(iconImage: iconImage, iconName: "CompressX-Kacper")
             }
           }
         }

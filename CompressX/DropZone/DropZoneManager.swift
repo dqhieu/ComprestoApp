@@ -1,9 +1,9 @@
-//
-//  DropZoneManager.swift
-//  CompressX
-//
-//  Created by Dinh Quang Hieu on 4/9/24.
-//
+  //
+  //  DropZoneManager.swift
+  //  CompressX
+  //
+  //  Created by Dinh Quang Hieu on 4/9/24.
+  //
 
 import AppKit
 import SwiftUI
@@ -32,6 +32,7 @@ class DropZoneManager: ObservableObject {
   @AppStorage("dropZoneCustomOutputFolder") var dropZoneCustomOutputFolder: String = ""
   @AppStorage("dropZoneRemoveFileAfterCompression") var dropZoneRemoveFileAfterCompression: Bool = false
   @AppStorage("dropZonePdfQuality") var dropZonePdfQuality: PDFQuality = .balance
+  @AppStorage("dropZoneNestedFolderName") var dropZoneNestedFolderName = "compressed"
 
   @AppStorage("imageQuality") var defaultImageQuality: ImageQuality = .highest
   @AppStorage("outputImageFormat") var defaultImageFormat: ImageFormat = .same
@@ -48,130 +49,140 @@ class DropZoneManager: ObservableObject {
   @AppStorage("outputFolder") var defaultOutputFolder: OutputFolder = .same
   @AppStorage("customOutputFolder") var defaultCustomOutputFolder = ""
   @AppStorage("removeFileAfterCompress") var defaultRemoveFileAfterCompress = false
+  @AppStorage("nestedFolderName") var defaultNestedFolderName = "compressed"
 
   var imageQuality: ImageQuality {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultImageQuality
-    case .custom:
-      return dropZoneImageQuality
+      case .same:
+        return defaultImageQuality
+      case .custom:
+        return dropZoneImageQuality
     }
   }
 
   var imageFormat: ImageFormat {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultImageFormat
-    case .custom:
-      return dropZoneImageFormat
+      case .same:
+        return defaultImageFormat
+      case .custom:
+        return dropZoneImageFormat
     }
   }
 
   var imageSize: ImageSize {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultImageSize
-    case .custom:
-      return dropZoneImageSize
+      case .same:
+        return defaultImageSize
+      case .custom:
+        return dropZoneImageSize
     }
   }
 
   var imageSizeValue: Int {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultImageSizeValue
-    case .custom:
-      return dropZoneImageSizeValue
+      case .same:
+        return defaultImageSizeValue
+      case .custom:
+        return dropZoneImageSizeValue
     }
   }
 
   var gifQuality: VideoQuality {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultGifQuality
-    case .custom:
-      return dropZoneGifQuality
+      case .same:
+        return defaultGifQuality
+      case .custom:
+        return dropZoneGifQuality
     }
   }
 
   var gifDimension: GifDimension {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultGifDimension
-    case .custom:
-      return dropZoneGifDimension
+      case .same:
+        return defaultGifDimension
+      case .custom:
+        return dropZoneGifDimension
     }
   }
 
   var videoQuality: VideoQuality {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultVideoQuality
-    case .custom:
-      return dropZoneVideoQuality
+      case .same:
+        return defaultVideoQuality
+      case .custom:
+        return dropZoneVideoQuality
     }
   }
 
   var videoFormat: VideoFormat {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultVideoFormat
-    case .custom:
-      return dropZoneVideoFormat
+      case .same:
+        return defaultVideoFormat
+      case .custom:
+        return dropZoneVideoFormat
     }
   }
 
   var videoDimension: VideoDimension {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultVideoDimension
-    case .custom:
-      return dropZoneVideoDimension
+      case .same:
+        return defaultVideoDimension
+      case .custom:
+        return dropZoneVideoDimension
     }
   }
 
   var removeAudio: Bool {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultRemoveAudio
-    case .custom:
-      return dropZoneRemoveAudio
+      case .same:
+        return defaultRemoveAudio
+      case .custom:
+        return dropZoneRemoveAudio
     }
   }
 
   var outputFolder: OutputFolder {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultOutputFolder
-    case .custom:
-      return dropZoneOutputFolder
+      case .same:
+        return defaultOutputFolder
+      case .custom:
+        return dropZoneOutputFolder
     }
   }
 
   var customOutputFolder: String {
     switch dropZoneCompressionSettingsType {
+      case .same:
+        return defaultCustomOutputFolder
+      case .custom:
+        return dropZoneCustomOutputFolder
+    }
+  }
+
+  var nestedFolderName: String {
+    switch dropZoneCompressionSettingsType {
     case .same:
-      return defaultCustomOutputFolder
+      return defaultNestedFolderName
     case .custom:
-      return dropZoneCustomOutputFolder
+      return dropZoneNestedFolderName
     }
   }
 
   var removeFileAfterCompression: Bool {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultRemoveFileAfterCompress
-    case .custom:
-      return dropZoneRemoveFileAfterCompression
+      case .same:
+        return defaultRemoveFileAfterCompress
+      case .custom:
+        return dropZoneRemoveFileAfterCompression
     }
   }
 
   var pdfQuality: PDFQuality {
     switch dropZoneCompressionSettingsType {
-    case .same:
-      return defaultPdfQuality
-    case .custom:
-      return dropZonePdfQuality
+      case .same:
+        return defaultPdfQuality
+      case .custom:
+        return dropZonePdfQuality
     }
   }
 
@@ -190,7 +201,8 @@ class DropZoneManager: ObservableObject {
   }
 
   var notchWindow: NSWindow?
-  var dropZoneView: DropZoneView?
+
+  var model = DropZoneViewModel()
 
   init() {
     if dropZoneEnabled {
@@ -232,10 +244,9 @@ class DropZoneManager: ObservableObject {
       self?.close()
     }
     let notchView = DropZoneView(
-      hasNotch: hasNotch,
+      model: model,
       onClose: onClose
     )
-    dropZoneView = notchView
     let view = NSHostingView(rootView: notchView)
     window.contentView = view
     window.level = .popUpMenu
@@ -252,7 +263,6 @@ class DropZoneManager: ObservableObject {
     notchWindow?.contentView = nil
     notchWindow?.close()
     notchWindow = nil
-    dropZoneView = nil
   }
 
   var jobQueue: [Job] = []
@@ -265,33 +275,34 @@ class DropZoneManager: ObservableObject {
       let fileType = checkFileType(url: inputFileURL)
       let outputType: OutputType? = {
         switch fileType {
-        case .image:
-          return .image(
-            imageQuality: imageQuality,
-            imageFormat: imageFormat,
-            imageSize: imageSize,
-            imageSizeValue: imageSizeValue
-          )
-        case .gif:
-          return .gifCompress(
-            gifQuality: gifQuality,
-            dimension: gifDimension
-          )
-        case .pdf:
-          return .pdfCompress(pdfQuality: pdfQuality)
-        case .video:
-          return .video(
-            videoQuality: videoQuality,
-            videoDimension: videoDimension,
-            videoFormat: videoFormat,
-            hasAudio: true,
-            removeAudio: removeAudio,
-            preserveTransparency: false,
-            startTime: nil,
-            endTime: nil
-          )
-        default:
-          return nil
+          case .image:
+            return .image(
+              imageQuality: imageQuality,
+              imageFormat: imageFormat,
+              imageSize: imageSize,
+              imageSizeValue: imageSizeValue
+            )
+          case .gif:
+            return .gifCompress(
+              gifQuality: gifQuality,
+              dimension: gifDimension
+            )
+          case .pdf:
+            return .pdfCompress(pdfQuality: pdfQuality)
+          case .video:
+            return .video(
+              videoQuality: videoQuality,
+              videoDimension: videoDimension,
+              videoFormat: videoFormat,
+              targetFileSize: 0,
+              hasAudio: true,
+              removeAudio: removeAudio,
+              preserveTransparency: false,
+              startTime: nil,
+              endTime: nil
+            )
+          default:
+            return nil
         }
       }()
       guard let outputType = outputType else { return }
@@ -300,6 +311,7 @@ class DropZoneManager: ObservableObject {
         outputType: outputType,
         outputFolder: outputFolder,
         customOutputFolder: customOutputFolder,
+        nestedFolderName: nestedFolderName,
         outputFileNameFormat: outputFileNameFormat,
         removeInputFile: removeFileAfterCompression
       )
@@ -321,6 +333,9 @@ class DropZoneManager: ObservableObject {
         guard jobs.count > 0 else { return }
         DispatchQueue.main.async { [weak self] in
           self?.jobQueue.removeAll()
+          guard LicenseManager.shared.isValid else {
+            return showActiveLicenseNotification()
+          }
           if HUDJobManager.shared.isRunning {
             HUDJobManager.shared.queue(newJobs: jobs)
           } else {
@@ -359,6 +374,18 @@ class DropZoneManager: ObservableObject {
     let midY = (NSScreen.main?.frame.height ?? 0) / 2 + (NSScreen.main?.frame.origin.y ?? 0)
     offsetX = offsetXMax * ((mouseLocation.x - centerPoint.x) / centerPoint.x)
     offsetY = offsetYMax * ((mouseLocation.y - midY) / midY)
+    let notchDropZoneFrame = NSRect(
+      x: notchFrame.origin.x - 150,
+      y: notchFrame.origin.y + (NSApplication.shared.mainMenu?.menuBarHeight ?? 0) - 200 + notchFrame.height,
+      width: 300 + notchFrame.width,
+      height: 200
+    )
+
+    if notchDropZoneFrame.contains(mouseLocation) {
+      model.show()
+    } else {
+      model.hide()
+    }
   }
 
   private func checkForDraggedItems() {
@@ -389,7 +416,7 @@ class DropZoneManager: ObservableObject {
         }
       }
       if isFileTypeSupported {
-        DropZoneManager.shared.show()
+        show()
       }
     }
   }

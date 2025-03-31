@@ -7,17 +7,47 @@
 
 import SwiftUI
 
+class DropZoneViewModel: ObservableObject {
+  @Published var scale = 0.0
+  @Published var offset = DropZoneManager.HEIGHT
+  @Published var alpha = 0.0
+  @Published var blur = 20.0
+
+
+  func show() {
+    withAnimation(.spring()) {
+      scale = 1.0
+      offset = 0
+    }
+    withAnimation(.spring().delay(0.1)) {
+      alpha = 1.0
+      blur = 0.0
+    }
+  }
+
+  func hide() {
+    withAnimation(.spring()) {
+      if hasNotch {
+        scale = 0.5
+        offset = DropZoneManager.HEIGHT
+      } else {
+        scale = 0.01
+        offset = DropZoneManager.HEIGHT
+      }
+      alpha = 0.0
+      blur = 20
+    }
+  }
+}
+
 struct DropZoneView: View {
 
-  var hasNotch: Bool
+  @ObservedObject var model: DropZoneViewModel
+  
   var onClose: () -> Void
 
   @ObservedObject var dropZoneManager = DropZoneManager.shared
 
-  @State private var scale = 0.5
-  @State private var offset = DropZoneManager.HEIGHT
-  @State private var alpha = 0.0
-  @State private var blur = 20.0
 
   @State var leftMouseReleaseMonitor: Any?
 
@@ -38,8 +68,8 @@ struct DropZoneView: View {
               .foregroundStyle(.white)
               .lineLimit(1)
               .offset(x: dropZoneManager.offsetX, y: -dropZoneManager.offsetY)
-              .opacity(alpha)
-              .blur(radius: blur)
+              .opacity(model.alpha)
+              .blur(radius: model.blur)
             Spacer(minLength: 0)
           }
           .background(.black)
@@ -71,13 +101,15 @@ struct DropZoneView: View {
       Spacer(minLength: 0)
         .background(.clear)
     }
-    .scaleEffect(scale)
-    .offset(x: 0, y: -offset)
+    .scaleEffect(model.scale)
+    .offset(x: 0, y: -model.offset)
     .dropDestination(for: URL.self) { items, location in
       return onDropFiles(items: items)
     }
     .task {
-      appear()
+      leftMouseReleaseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { _ in
+        dismiss()
+      }
     }
   }
 
@@ -86,37 +118,12 @@ struct DropZoneView: View {
     return true
   }
 
-  func appear() {
-    withAnimation(.spring()) {
-      scale = 1.0
-      offset = 0
-    }
-    withAnimation(.spring().delay(0.1)) {
-      alpha = 1.0
-      blur = 0.0
-    }
-
-    leftMouseReleaseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { _ in
-      dismiss()
-    }
-  }
-
   func dismiss() {
     if let monitor = leftMouseReleaseMonitor {
       NSEvent.removeMonitor(monitor)
       leftMouseReleaseMonitor = nil
     }
-    withAnimation(.spring()) {
-      if hasNotch {
-        scale = 0.5
-        offset = DropZoneManager.HEIGHT
-      } else {
-        scale = 0.01
-        offset = DropZoneManager.HEIGHT
-      }
-      alpha = 0.0
-      blur = 20
-    }
+    model.hide()
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
       onClose()
     }

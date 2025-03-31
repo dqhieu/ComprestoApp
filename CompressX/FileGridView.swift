@@ -84,7 +84,7 @@ struct FileInfoOverlay: View {
                   )
               }
               .buttonStyle(.borderless)
-              .disabled(jobManager.isRunning)
+              .disabled(jobManager.isRunning && jobManager.jobs.first(where:  { $0.inputFileURL == file.url })?.status != "")
             } else {
               Button {
                 wrapper?.playerView.player?.pause()
@@ -104,7 +104,7 @@ struct FileInfoOverlay: View {
                   )
               }
               .buttonStyle(.borderless)
-              .disabled(jobManager.isRunning)
+              .disabled(jobManager.isRunning && jobManager.jobs.first(where:  { $0.inputFileURL == file.url })?.status != "")
               Button {
                 wrapper?.playerView.player?.pause()
                 dismiss()

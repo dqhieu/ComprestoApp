@@ -42,6 +42,7 @@ class WatchSetting: Identifiable, Codable {
   var imageSize: ImageSize? = .same
   var imageSizeValue: Int? = 100
   var outputFileNameFormat: String? = ""
+  var nestedFolderName: String? = "compressed"
 }
 
 struct WatchSettingView: View {
@@ -63,6 +64,7 @@ struct WatchSettingView: View {
   @State private var outputFileNameFormat: String = ""
   @State private var showOutputFileNameFormatPopover = false
   @State private var imageSizeValueText = "100"
+  @State private var nestedFolderNameText = ""
 
   var body: some View {
     Form {
@@ -201,6 +203,26 @@ struct WatchSettingView: View {
             setting.outputFolder = newValue
             updateSetting()
           })
+          if outputFolder == .nested {
+            HStack {
+              Text("Folder name")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+              Spacer()
+              TextField("", text: $nestedFolderNameText, prompt: Text("compressed").font(.caption).foregroundColor(.secondary))
+                .textFieldStyle(.squareBorder)
+                .labelsHidden()
+                .multilineTextAlignment(.trailing)
+                .onChange(of: nestedFolderNameText, perform: { newValue in
+                  if nestedFolderNameText.isEmpty {
+                    setting.nestedFolderName = "compressed"
+                  } else {
+                    setting.nestedFolderName = nestedFolderNameText
+                  }
+                  updateSetting()
+                })
+            }
+          }
           if outputFolder == .custom, !customOutputFolder.isEmpty {
             HStack {
               Text(customOutputFolder.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false), with: "~/"))
@@ -231,6 +253,7 @@ struct WatchSettingView: View {
                 Text("{datetime} - Current date and time in \"yyyy-MM-dd'T'HHmmss\" format")
                 Text("{date} - Current date in \"yyyy-MM-dd\" format")
                 Text("{time} - Current time in \"HHmmss\" format")
+                Text("{quality} - Quality of the output file")
               }
               .padding()
             }
@@ -260,6 +283,7 @@ struct WatchSettingView: View {
       videoDimension = setting.videoDimension ?? .same
       imageSize = setting.imageSize ?? .same
       outputFileNameFormat = setting.outputFileNameFormat ?? ""
+      nestedFolderNameText = setting.nestedFolderName ?? "compressed"
     }
   }
 

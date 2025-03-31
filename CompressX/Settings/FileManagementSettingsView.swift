@@ -99,7 +99,7 @@ struct FileManagementSettingsView: View {
         } label: {
           Text("On drop files and folders into main window")
         }
-        Text("Hold Option key to always append files.")
+        Text("Hold Option key to always append files. Hold Control key to always replace files.")
           .font(.caption)
           .foregroundStyle(.secondary)
       }
@@ -151,6 +151,7 @@ struct FileManagementSettingsView: View {
               Text("{datetime} - Current date and time in \"yyyy-MM-dd'T'HHmmss\" format")
               Text("{date} - Current date in \"yyyy-MM-dd\" format")
               Text("{time} - Current time in \"HHmmss\" format")
+              Text("{quality} - Quality of the output file")
             }
             .padding()
           }
@@ -222,6 +223,7 @@ struct FileManagementSettingsView: View {
       .replacingOccurrences(of: "{datetime}", with: Date().toISO8601DateTime)
       .replacingOccurrences(of: "{date}", with: Date().toISO8601Date)
       .replacingOccurrences(of: "{time}", with: Date().toISO8601Time)
+      .replacingOccurrences(of: "{quality}", with: "Good")
     let outputFileName = "input1" + format + ".mp4"
     return outputFileName
   }
@@ -232,6 +234,7 @@ struct FileManagementSettingsView: View {
       .replacingOccurrences(of: "{datetime}", with: Date().toISO8601DateTime)
       .replacingOccurrences(of: "{date}", with: Date().toISO8601Date)
       .replacingOccurrences(of: "{time}", with: Date().toISO8601Time)
+      .replacingOccurrences(of: "{quality}", with: "Good")
     if format.isEmpty {
       return "input2" + "_compressed.mov"
     } else {

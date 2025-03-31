@@ -86,7 +86,17 @@ func isTiffFile(url: URL) -> Bool {
 }
 
 func preProcessRawImage(inputFileURL: URL) -> URL? {
-  let outputFile = FileManager.default.temporaryDirectory.appending(path: inputFileURL.lastPathComponent)
+  // Generate a random UUID string
+  let uuid = UUID().uuidString
+  
+  // Get the file name and extension
+  let fileName = inputFileURL.deletingPathExtension().lastPathComponent
+  let fileExtension = inputFileURL.pathExtension
+  
+  // Create new filename with UUID
+  let newFileName = "\(fileName)_\(uuid).\(fileExtension)"
+  
+  let outputFile = FileManager.default.temporaryDirectory.appending(path: newFileName)
   if convertDNGToJPEG(inputURL: inputFileURL, outputURL: outputFile) {
     return outputFile
   }
@@ -701,4 +711,62 @@ func hasSubfolders(urls: [URL]) -> Bool {
     }
   }
   return false
+}
+
+func showActivateLicenseAlert() {
+  let alert = NSAlert.init()
+  alert.messageText = "Please activate your license"
+  alert.alertStyle = .critical
+  alert.addButton(withTitle: "OK")
+  let _ = alert.runModal()
+}
+
+func showActiveLicenseNotification() {
+  let content = UNMutableNotificationContent()
+  content.title = "License not activated!"
+  content.body = "Please activate your license to use this feature!"
+  content.sound = .default
+  let request = UNNotificationRequest(identifier: "compress.activation.error" + UUID().uuidString, content: content, trigger: nil)
+  Task {
+    try? await UNUserNotificationCenter.current().add(request)
+  }
+}
+
+func getVideoQualityParameters(videoQuality: VideoQuality, targetFileSize: Double, videoDuration: Double, audioSize: Int64?, fileSize: Int64?) -> [String] {
+  if videoQuality == .fileSize, videoDuration > 0, let fileSize = fileSize, targetFileSize < Double(fileSize) {
+    // targetFileSize in bytes
+    let fileSizeInKilobits = targetFileSize * 8 / 1000 - Double(audioSize ?? 0) * 8 / 1000
+    let bitrate = fileSizeInKilobits / videoDuration
+    return [
+      "-b:v",
+      "\(Int(bitrate))k"
+    ]
+  }
+  return [
+    "-crf",
+    videoQuality.crf
+  ]
+}
+
+func getAudioSizeFrom(url: URL) async throws -> Int64 {
+  let asset = AVAsset(url: url)
+  let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+  var totalSize: Int64 = 0
+  for track in audioTracks {
+    let audioSize = try await track.load(.totalSampleDataLength)
+    totalSize += audioSize
+  }
+  return totalSize
+}
+
+extension Optional where Wrapped == String {
+  var isNilOrEmpty: Bool {
+    return self?.isEmpty ?? true
+  }
+}
+
+extension String {
+  var nonEmptyString: String? {
+    return self.isEmpty == true ? nil : self
+  }
 }

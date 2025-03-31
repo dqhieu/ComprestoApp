@@ -42,6 +42,7 @@ class DeeplinkParser {
               videoQuality: .high,
               videoDimension: .same,
               videoFormat: .same,
+              targetFileSize: 0,
               hasAudio: true,
               removeAudio: false,
               preserveTransparency: false,
@@ -58,6 +59,7 @@ class DeeplinkParser {
             outputType: outputType,
             outputFolder: .same,
             customOutputFolder: "",
+            nestedFolderName: "compressed",
             outputFileNameFormat: outputFileNameFormat,
             removeInputFile: removeFileAfterCompress
           )]
@@ -246,6 +248,7 @@ class DeeplinkParser {
           videoQuality: videoQuality,
           videoDimension: .same,
           videoFormat: videoFormat,
+          targetFileSize: 0,
           hasAudio: true,
           removeAudio: removeAudio,
           preserveTransparency: false,
@@ -269,6 +272,7 @@ class DeeplinkParser {
           outputType: outputType,
           outputFolder: .custom,
           customOutputFolder: outputDirectory,
+          nestedFolderName: "compressed",
           outputFileNameFormat: fileNameFormat,
           removeInputFile: removeInputFile
         )
@@ -279,6 +283,7 @@ class DeeplinkParser {
           outputType: outputType,
           outputFolder: .same,
           customOutputFolder: "",
+          nestedFolderName: "compressed",
           outputFileNameFormat: fileNameFormat,
           removeInputFile: removeInputFile
         )

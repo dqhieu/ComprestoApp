@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/KeyboardShortcuts",
       "state" : {
-        "revision" : "7ecc38bb6edf7d087d30e737057b8d8a9b7f51eb",
-        "version" : "2.2.4"
+        "revision" : "045cf174010beb335fa1d2567d18c057b8787165",
+        "version" : "2.3.0"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImage.git",
       "state" : {
-        "revision" : "10d06f6a33bafae8c164fbfd1f03391f6d4692b3",
-        "version" : "5.20.0"
+        "revision" : "cac9a55a3ae92478a2c95042dcc8d9695d2129ca",
+        "version" : "5.21.0"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle",
       "state" : {
-        "revision" : "0ef1ee0220239b3776f433314515fd849025673f",
-        "version" : "2.6.4"
+        "revision" : "0ca3004e98712ea2b39dd881d28448630cce1c99",
+        "version" : "2.7.0"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/TelemetryDeck/SwiftSDK",
       "state" : {
-        "revision" : "3119395c02e7350f86f4ee0b5335bca22eb4ff0a",
-        "version" : "2.7.2"
+        "revision" : "65bfb4ce809c58deee31b4889ee650b01ed04a88",
+        "version" : "2.8.2"
       }
     }
   ],

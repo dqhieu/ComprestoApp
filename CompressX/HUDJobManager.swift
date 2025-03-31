@@ -46,7 +46,7 @@ class HUDJobManager: ObservableObject {
     if isRetrying {
       job.status = "Retrying"
     } else {
-      if job.isMKV {
+      if job.isProgressNotAvailable {
         job.status = "Compressing"
       } else if job.isVideo {
         job.status = "Preparing"
@@ -57,9 +57,10 @@ class HUDJobManager: ObservableObject {
       }
     }
     let error = await CommandlineHelper.run(process: process)
+    job.status = "Finished"
     currentProcess = nil
     if error == nil,
-       case .video(let videoQuality, let videoDimension, let videoFormat, let hasAudio, let removeAudio, let preserveTransparency, let startTime, let endTime) = job.outputType,
+       case .video(let videoQuality, let videoDimension, let videoFormat, let targetFileSize, let hasAudio, let removeAudio, let preserveTransparency, let startTime, let endTime) = job.outputType,
        FileManager.default.fileExists(atPath: job.outputFileURL.path(percentEncoded: false)),
        (job.outputFileSize ?? 0) >= (job.inputFileSize ?? 0),
        let nextQuality = videoQuality.next {
@@ -67,6 +68,7 @@ class HUDJobManager: ObservableObject {
         videoQuality: nextQuality,
         videoDimension: videoDimension,
         videoFormat: videoFormat,
+        targetFileSize: targetFileSize,
         hasAudio: hasAudio,
         removeAudio: removeAudio,
         preserveTransparency: preserveTransparency,

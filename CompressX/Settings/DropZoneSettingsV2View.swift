@@ -68,8 +68,10 @@ struct DropZoneSettingsV2View: View {
   @AppStorage("dropZoneOutputFolder") var outputFolder: OutputFolder = .same
   @AppStorage("dropZoneCustomOutputFolder") var customOutputFolder: String = ""
   @AppStorage("dropZoneRemoveFileAfterCompression") var removeFileAfterCompression: Bool = false
+  @AppStorage("dropZoneNestedFolderName") var dropZoneNestedFolderName = "compressed"
 
   @State private var dropZoneImageSizeValueText = "100"
+  @State private var dropZoneNestedFolderNameText = "compressed"
 
   var body: some View {
     Form {
@@ -113,6 +115,29 @@ struct DropZoneSettingsV2View: View {
                   openFolderSelectionPanel()
                 }
               })
+              if outputFolder == .nested {
+                HStack {
+                  Text("Folder name")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                  Spacer()
+                  TextField("", text: $dropZoneNestedFolderNameText, prompt: Text("compressed").font(.caption).foregroundColor(.secondary))
+                    .textFieldStyle(.squareBorder)
+                    .labelsHidden()
+                    .multilineTextAlignment(.trailing)
+                    .onChange(of: dropZoneNestedFolderNameText, perform: { newValue in
+                      if dropZoneNestedFolderNameText.isEmpty {
+                        dropZoneNestedFolderName = "compressed"
+                      } else {
+                        dropZoneNestedFolderName = dropZoneNestedFolderNameText
+                      }
+                    })
+                    .task {
+                      dropZoneNestedFolderNameText = dropZoneNestedFolderName
+                    }
+                }
+              }
+
               if outputFolder == .custom, !customOutputFolder.isEmpty {
                 HStack {
                   Text(customOutputFolder.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false), with: "~/"))

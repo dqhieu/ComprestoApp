@@ -20,7 +20,7 @@ struct CompressView: View {
   @AppStorage("notifyWhenFinish") var notifyWhenFinish = false
   @AppStorage("removeFileAfterCompress") var removeFileAfterCompress = false
   @AppStorage("shouldRemindAutoCompress") var shouldRemindAutoCompress = true
-  @AppStorage("outputFolderType") var outputFolderType = 1
+  @AppStorage("nestedFolderName") var nestedFolderName = "compressed"
   @AppStorage("videoQuality") var videoQuality: VideoQuality = .high
   @AppStorage("imageQuality") var imageQuality: ImageQuality = .highest
   @AppStorage("gifQuality") var gifQuality: VideoQuality = .high
@@ -67,6 +67,8 @@ struct CompressView: View {
   @State private var startTimes: [URL: CMTime] = [:]
   @State private var endTimes: [URL: CMTime] = [:]
   @State private var subfolderProcessingLimitText = "1"
+  @State private var nestedFolderNameText = ""
+  @State private var targetFileSize: Double = 2048
 
   @State private var inputPaths: [URL] = []
 
@@ -74,7 +76,7 @@ struct CompressView: View {
     if showPreserveTransparency && shouldPreserveTransparency && outputFormat != .webm {
       return [.highest, .ultraHD, .fullHD]
     }
-    return [.highest, .high, .good, .medium, .acceptable]
+    return [.highest, .high, .good, .medium, .acceptable, .fileSize]
   }
 
   var gifQualities: [VideoQuality] = [.highest, .high, .good, .medium, .acceptable]
@@ -170,9 +172,15 @@ struct CompressView: View {
                 startTimes: $startTimes,
                 endTimes: $endTimes,
                 onRemoveFile: { file in
-                  var inputFileURLs = jobManager.inputFileURLs
-                  inputFileURLs.removeAll(where: { $0 == file.url })
-                  setSourceFile(urls: inputFileURLs)
+                  if jobManager.isRunning {
+                    jobManager.jobs.removeAll(where: { $0.inputFileURL == file.url })
+                    jobManager.inputFileURLs.removeAll(where: { $0 == file.url })
+                    inputFiles.removeAll(where: { $0.url == file.url })
+                  } else {
+                    var inputFileURLs = jobManager.inputFileURLs
+                    inputFileURLs.removeAll(where: { $0 == file.url })
+                    setSourceFile(urls: inputFileURLs)
+                  }
                 }
               )
             } else {
@@ -322,6 +330,28 @@ struct CompressView: View {
                     openFolderSelectionPanel()
                   }
                 })
+                if outputFolder == .nested {
+                  HStack {
+                    Text("Folder name")
+                      .font(.caption)
+                      .foregroundStyle(.secondary)
+                    Spacer()
+                    TextField("", text: $nestedFolderNameText, prompt: Text("compressed").font(.caption).foregroundColor(.secondary))
+                      .textFieldStyle(.squareBorder)
+                      .labelsHidden()
+                      .multilineTextAlignment(.trailing)
+                      .onChange(of: nestedFolderNameText, perform: { newValue in
+                        if nestedFolderNameText.isEmpty {
+                          nestedFolderName = "compressed"
+                        } else {
+                          nestedFolderName = nestedFolderNameText
+                        }
+                      })
+                      .task {
+                        nestedFolderNameText = nestedFolderName
+                      }
+                  }
+                }
                 if outputFolder == .custom, !customOutputFolder.isEmpty {
                   HStack {
                     Text(customOutputFolder.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false), with: "~/"))
@@ -346,7 +376,8 @@ struct CompressView: View {
                 shouldPreserveTransparency: $shouldPreserveTransparency,
                 isInputWebM: $isInputWebM,
                 fpsValue: $fpsValue,
-                hasAudio: $hasAudio
+                hasAudio: $hasAudio,
+                targetFileSize: $targetFileSize
               )
             }
             if hasImageInput {
@@ -364,10 +395,10 @@ struct CompressView: View {
                   HStack {
                     switch job.outputType {
                     case .video:
-                      if jobManager.currentJob?.isMKV ?? false {
+                      if jobManager.currentJob?.isProgressNotAvailable ?? false {
                         ProgressView {
                           HStack {
-                            Text(jobManager.currentJob?.status ?? "Compressing")
+                            Text(jobManager.currentJob?.status.nonEmptyString ?? "Compressing")
                             if jobManager.jobs.count > 1, let index = jobManager.currentIndex {
                               Text("\(index)/\(jobManager.jobs.count) files")
                             }
@@ -379,7 +410,7 @@ struct CompressView: View {
                       } else {
                         ProgressView(value: jobManager.currentProgress, total: 1) {
                           HStack {
-                            Text(jobManager.currentJob?.status ?? "Compressing")
+                            Text(jobManager.currentJob?.status.nonEmptyString ?? "Compressing")
                             if jobManager.jobs.count > 1, let index = jobManager.currentIndex {
                               Text("\(index)/\(jobManager.jobs.count) files")
                             }
@@ -673,9 +704,14 @@ struct CompressView: View {
     Task {
       var hasAtleast1Audio = false
       for url in urls {
-        do {
-          let inputHasAudio = try await url.hasAudio
-          if inputHasAudio { hasAtleast1Audio = true }
+        let fileType = checkFileType(url: url)
+        if fileType == .video {
+          do {
+            let inputHasAudio = try await url.hasAudio
+            if inputHasAudio { hasAtleast1Audio = true }
+          } catch {
+            
+          }
         }
       }
       await MainActor.run {
@@ -756,7 +792,7 @@ struct CompressView: View {
     errorMessage = nil
     for job in jobs {
       switch job.outputType {
-      case .video(let videoQuality, let videoDimension, let videoFormat, _, let removeAudio, let preserveTransparency, _, _):
+      case .video(let videoQuality, let videoDimension, let videoFormat, _, _, let removeAudio, let preserveTransparency, _, _):
         self.videoQuality = videoQuality
         self.outputFormat = videoFormat
         self.removeAudio = removeAudio
@@ -807,6 +843,7 @@ struct CompressView: View {
       gifQuality: gifQuality,
       gifDimension: gifDimension,
       videoFormat: outputFormat,
+      targetFileSize: targetFileSize,
       pdfQuality: pdfQuality,
       hasAudio: hasAudio,
       removeAudio: removeAudio,
@@ -880,6 +917,7 @@ struct CompressView: View {
         gifQuality: gifQuality,
         gifDimension: gifDimension,
         videoFormat: outputFormat,
+        targetFileSize: targetFileSize,
         pdfQuality: pdfQuality,
         hasAudio: hasAudio,
         removeAudio: removeAudio,
@@ -892,11 +930,14 @@ struct CompressView: View {
       setInputFiles(urls: jobManager.inputFileURLs)
     } else {
       let optionKeyPressed = NSEvent.modifierFlags.contains(.option)
+      let controlKeyPressed = NSEvent.modifierFlags.contains(.control)
       if optionKeyPressed {
         // Append files if Option key is pressed
         let currentFiles = jobManager.inputFileURLs
         let newFiles = items.filter { !currentFiles.contains($0) }
         setSourceFile(urls: currentFiles + newFiles)
+      } else if controlKeyPressed {
+        setSourceFile(urls: items)
       } else {
         switch onDropBehavior {
         case .replace:
@@ -913,14 +954,6 @@ struct CompressView: View {
   func showFileNotSupportedAlert(type: String) {
     let alert = NSAlert.init()
     alert.messageText = "The \(type) type is not supported!"
-    alert.addButton(withTitle: "OK")
-    let _ = alert.runModal()
-  }
-
-  func showActivateLicenseAlert() {
-    let alert = NSAlert.init()
-    alert.messageText = "Please activate your license"
-    alert.alertStyle = .critical
     alert.addButton(withTitle: "OK")
     let _ = alert.runModal()
   }

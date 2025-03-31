@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "477CACBA2B0904EF00B335E5"
-               BuildableName = "CompressX.app"
+               BuildableName = "Compresto.app"
                BlueprintName = "CompressX"
                ReferencedContainer = "container:CompressX.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "477CACBA2B0904EF00B335E5"
-            BuildableName = "CompressX.app"
+            BuildableName = "Compresto.app"
             BlueprintName = "CompressX"
             ReferencedContainer = "container:CompressX.xcodeproj">
          </BuildableReference>
@@ -61,7 +61,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "477CACBA2B0904EF00B335E5"
-            BuildableName = "CompressX.app"
+            BuildableName = "Compresto.app"
             BlueprintName = "CompressX"
             ReferencedContainer = "container:CompressX.xcodeproj">
          </BuildableReference>
