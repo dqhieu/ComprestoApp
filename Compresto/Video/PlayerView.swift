@@ -1,0 +1,177 @@
+//
+//  PlayerView.swift
+//  Compresto
+//
+//  Created by Dinh Quang Hieu on 1/17/25.
+//
+
+import SwiftUI
+import AVKit
+
+struct SingleVideoPlayerView: View {
+
+  @Environment(\.colorScheme) var colorScheme
+
+  @StateObject var wrapper = AVPlayerViewWrapper()
+  @State var player: AVPlayer?
+  @State var isHovering = false
+  @State private var dimensionsText: String?
+
+  let file: InputFile
+  @Binding var startTimes: [URL: CMTime]
+  @Binding var endTimes: [URL: CMTime]
+
+  var bottomPadding: CGFloat {
+    if isHovering {
+      if #available(macOS 26, *) {
+        return 48
+      }
+      return 34
+    }
+    return 0
+  }
+
+  var topPadding: CGFloat {
+    if isHovering {
+      if #available(macOS 26, *) {
+        return 48
+      }
+      return 0
+    }
+    return 0
+  }
+
+  var body: some View {
+    ZStack {
+      AVPlayerControllerRepresented(player: wrapper.playerView)
+      if !wrapper.isTrimming {
+        VStack {
+          HStack {
+            Text("\(file.fileExtension) | \(file.fileSize)")
+              .padding(6)
+              .pill(colorScheme: colorScheme, clear: !isHovering)
+            Button {
+              Task {
+                await wrapper.beginTrim()
+              }
+            } label: {
+              Text("Trim video")
+                .padding(6)
+                .pill(colorScheme: colorScheme, clear: !isHovering)
+            }
+            .buttonStyle(.borderless)
+            Spacer()
+          }
+          .padding(.top, topPadding)
+          Spacer()
+          HStack {
+            Text("\(file.fileName)")
+              .lineLimit(1)
+              .padding(6)
+              .pill(colorScheme: colorScheme, clear: !isHovering)
+            if let dimensionsText {
+              Text(dimensionsText)
+                .padding(6)
+                .pill(colorScheme: colorScheme, clear: !isHovering)
+            }
+            Spacer()
+          }
+          .padding(.bottom, bottomPadding)
+        }
+        .padding(8)
+      }
+    }
+    .onHover(perform: { hover in
+      withAnimation(.spring) {
+        isHovering = hover
+      }
+    })
+    .task {
+      reloadPlayer(file: file)
+    }
+    .onChange(of: file, perform: { newValue in
+      wrapper.playerView.player?.pause()
+      reloadPlayer(file: newValue)
+    })
+    .onDisappear {
+      wrapper.playerView.player?.pause()
+    }
+  }
+
+  func reloadPlayer(file: InputFile) {
+    player = AVPlayer(url: file.url)
+    if let player = player {
+      wrapper.reload(player: player, startTime: startTimes[file.url], endTime: endTimes[file.url])
+    }
+    wrapper.onTrimConfirmed = { (start, end) -> Void in
+      startTimes[file.url] = start
+      endTimes[file.url] = end
+    }
+    Task {
+      if let size = try? await getVideoSize(from: file.url) {
+        dimensionsText = "\(Int(size.width))×\(Int(size.height))"
+      }
+    }
+  }
+}
+
+struct PlayerView: View {
+
+  @StateObject var wrapper = AVPlayerViewWrapper()
+
+  @Binding var avPlayer: AVPlayer?
+  @Binding var startTime: CMTime?
+  @Binding var endTime: CMTime?
+  @Binding var outputFormat: VideoFormat
+  var shouldShowTrim: Bool
+  var onTrimConfirmed: () -> Void
+
+  init(
+    player: Binding<AVPlayer?>,
+    startTime: Binding<CMTime?>,
+    endTime: Binding<CMTime?>,
+    outputFormat: Binding<VideoFormat>,
+    shouldShowTrim: Bool,
+    onTrimConfirmed: @escaping () -> Void
+  ) {
+    self._avPlayer = player
+    self._startTime = startTime
+    self._endTime = endTime
+    self._outputFormat = outputFormat
+    self.shouldShowTrim = shouldShowTrim
+    self.onTrimConfirmed = onTrimConfirmed
+  }
+
+  var body: some View {
+    ZStack {
+      AVPlayerControllerRepresented(player: wrapper.playerView)
+    }
+    .overlay(alignment: .topLeading) {
+      if !wrapper.isTrimming && outputFormat != .gif && shouldShowTrim {
+        Button(action: {
+          Task {
+            await wrapper.beginTrim()
+          }
+        }, label: {
+          Text("\(Image(systemName: "timeline.selection")) Trim video")
+        })
+        .padding()
+      }
+    }
+    .task {
+      if let player = avPlayer {
+        wrapper.reload(player: player, startTime: startTime, endTime: endTime)
+      }
+      wrapper.onTrimConfirmed = { (start, end) in
+        startTime = start
+        endTime = end
+        onTrimConfirmed()
+      }
+    }
+    .onChange(of: avPlayer, perform: { newValue in
+      if let player = avPlayer {
+        wrapper.reload(player: player, startTime: startTime, endTime: endTime)
+      }
+    })
+  }
+}

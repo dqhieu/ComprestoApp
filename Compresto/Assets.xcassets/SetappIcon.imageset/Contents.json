@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "Setapp Desktop Icon 512х512.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
